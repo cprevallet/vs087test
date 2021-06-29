@@ -4,11 +4,20 @@ use vsop87::{RectangularCoordinates};
 // Convert decimal degrees to hours, minutes, seconds.
 fn deg_to_hms(angle_deg:f64) -> (i32, i32, i32) {
     let d:f64 = angle_deg / 360.0 * 24.0;
-    let h = d.floor() as i32;
-    let m = (d.fract() * 60.0).floor() as i32;
+    let h = d.trunc() as i32;
+    let m = (d.fract() * 60.0).trunc() as i32;
     let s = ((d.fract() * 60.0).fract() * 60.0) as i32;
     return (h, m, s)
 }
+
+// Convert decimal degrees to degrees, minutes, seconds.
+fn deg_to_dms(angle_deg:f64) -> (i32, i32, i32) {
+    let d:i32 = angle_deg.trunc() as i32;
+    let m = (angle_deg.fract() * 60.0).trunc() as i32;
+    let s = ((angle_deg.fract() * 60.0).fract() * 60.0) as i32;
+    return (d, m, s)
+}
+
 
 // Represents a calendar type.
 #[allow(dead_code)]
@@ -59,7 +68,7 @@ fn julian_day(year: i16, month: u8, decimal_day: f64, cal_type: CalType) -> f64 
 
 // Return the geocentric, spherical coordinates (RA and Declination) for a planet on a
 // Julian Day.
-fn vsp087_coords(julian_day:f64, planet:Planet) -> (i32, i32, i32, f64) {
+fn vsp087_coords(julian_day:f64, planet:Planet) -> (f64, f64) {
     // Get cartesian, ecliptic, heliocentric coordinates for Earth.
     let e_helio_ecliptic_rectcoord = vsop87a::earth(julian_day);
     // Get cartesian, ecliptic, heliocentric coordinates for a planet.
@@ -138,25 +147,26 @@ fn vsp087_coords(julian_day:f64, planet:Planet) -> (i32, i32, i32, f64) {
     } else {
         right_ascension = right_ascension.to_degrees();
     }
-    let (right_ascension_hr,right_ascension_min,right_ascension_sec) = deg_to_hms(right_ascension);
     // Return the results.
-    return ( right_ascension_hr, right_ascension_min, right_ascension_sec, declination );
+    return ( right_ascension, declination );
 }
 
-fn print_result(planet: Planet, coords: (i32, i32, i32, f64)) {
+fn print_result(planet: Planet, coords: (f64, f64)) {
 //    println!("Planet                 : {:?} ", planet); 
     let _p = match planet {
-        Planet::Mercury => println!("Planet: Mercury"),
-        Planet::Venus => println!("Planet: Venus"),
-        Planet::Earth => println!("Planet: Earth"),
-        Planet::Mars=> println!("Planet: Mars "),
-        Planet::Jupiter=> println!("Planet: Jupiter"),
-        Planet::Saturn=> println!("Planet: Saturn"),
-        Planet::Uranus=> println!("Planet: Uranus"),
-        Planet::Neptune=> println!("Planet: Neptune"),
+        Planet::Mercury => println!("Planet: Mercury, \u{263F}"),
+        Planet::Venus => println!("Planet: Venus \u{2640}"),
+        Planet::Earth => println!("Planet: Earth \u{2641}"),
+        Planet::Mars=> println!("Planet: Mars \u{2642}"),
+        Planet::Jupiter=> println!("Planet: Jupiter \u{2643}"),
+        Planet::Saturn=> println!("Planet: Saturn \u{2644}"),
+        Planet::Uranus=> println!("Planet: Uranus \u{26E2}"),
+        Planet::Neptune=> println!("Planet: Neptune \u{2646}"),
     };
-    println!("declination     (J2000): {} degrees", coords.3);  
-    println!("right ascension (J2000): {} hr {} min {} sec", coords.0, coords.1, coords.2);
+    let (decl_deg, decl_min, decl_sec) = deg_to_dms(coords.1);
+    let (ra_hr, ra_min, ra_sec) = deg_to_hms(coords.0);
+    println!("Right Ascension,\u{03B1} : {:02}h {:02}m {:02}s", ra_hr, ra_min, ra_sec);
+    println!("Declination,\u{03B4}     : {:03}\u{00B0} {:02}\' {:02}\"", decl_deg, decl_min, decl_sec);
     println!("");
 
 }
@@ -164,7 +174,7 @@ fn main() {
     // Pick a date and calculate the position of a planet.
     // Be careful!  Julian Days are based on UTC time.
     let jd = julian_day(2021, 6, 28.96, CalType::Gregorian);
-    println!("julian day             : {} ", jd); 
+    println!("Ephemeris (J2000) for Julian day: {} ", jd); 
     print_result(Planet::Mercury, vsp087_coords(jd, Planet::Mercury));
     print_result(Planet::Venus, vsp087_coords(jd, Planet::Venus));
     print_result(Planet::Earth, vsp087_coords(jd, Planet::Earth));
